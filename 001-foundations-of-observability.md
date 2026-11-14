@@ -1,104 +1,368 @@
-# 001 — Foundations of Observability
+# 🔭 Foundations of Observability
 
-## Table of Contents
-
-1. [Application Architecture & DevOps Evolution](#1-application-architecture--devops-evolution)
-2. [Monitoring & the 3 Key Questions](#2-monitoring--the-3-key-questions)
-3. [DevOps Success Metrics: MTTD & MTTR](#3-devops-success-metrics-mttd--mttr)
-4. [Monitoring Methods](#4-monitoring-methods)
-5. [Observability vs. Monitoring](#5-observability-vs-monitoring)
-6. [Metric Collection: Push vs. Scrape](#6-metric-collection-push-vs-scrape)
-7. [Types of Telemetry Data (MELT)](#7-types-of-telemetry-data-melt)
+A practical reference guide for learning observability from scratch — covering why modern architectures need it, monitoring vs observability, telemetry data (MELT), monitoring methods, metric collection, and how teams measure incident response.
 
 ---
 
-## 1. Application Architecture & DevOps Evolution
+## 📋 Table of Contents
 
-### A. Monolithic vs. Microservice Architecture
+- [Introduction](#-introduction)
+  - [Who Is This For?](#who-is-this-for)
+  - [What This Material Covers](#what-this-material-covers)
+  - [Why Learn Observability?](#why-learn-observability)
+- [From Monolith to Microservices](#️-from-monolith-to-microservices)
+  - [Monolithic Architecture](#monolithic-architecture)
+  - [Microservice Architecture](#microservice-architecture)
+  - [Waterfall vs CI/CD](#waterfall-vs-cicd)
+  - [Why Modern Systems Need Observability](#why-modern-systems-need-observability)
+- [Monitoring](#-monitoring)
+  - [What Is Monitoring?](#what-is-monitoring)
+  - [The 3 Key Questions](#the-3-key-questions)
+  - [Example: Car Dashboard](#example-car-dashboard)
+  - [Example: Save the Koala Website](#example-save-the-koala-website)
+- [Observability](#-observability)
+  - [What Is Observability?](#what-is-observability)
+  - [Problems with Monitoring Alone](#problems-with-monitoring-alone)
+  - [Monitoring vs Observability](#monitoring-vs-observability)
+- [Telemetry Data (MELT)](#-telemetry-data-melt)
+  - [What Is MELT?](#what-is-melt)
+  - [Event](#event)
+  - [Metric](#metric)
+  - [Log](#log)
+  - [Trace](#trace)
+  - [MELT Compared](#melt-compared)
+- [Monitoring Methods](#-monitoring-methods)
+  - [Choosing a Method by Layer](#choosing-a-method-by-layer)
+  - [RED Method](#red-method)
+  - [USE Method](#use-method)
+  - [Four Golden Signals](#four-golden-signals)
+  - [Core Web Vitals](#core-web-vitals)
+- [Metric Collection](#-metric-collection)
+  - [Push Method](#push-method)
+  - [Scrape Method](#scrape-method)
+  - [Choosing Push or Scrape](#choosing-push-or-scrape)
+  - [Push vs Scrape](#push-vs-scrape)
+- [MTTD & MTTR](#️-mttd--mttr)
+  - [Mean Time to Detection (MTTD)](#mean-time-to-detection-mttd)
+  - [Mean Time to Resolve (MTTR)](#mean-time-to-resolve-mttr)
+  - [Example: Incident Timeline](#example-incident-timeline)
+- [Quick Reference](#-quick-reference)
+- [Best Practices](#-best-practices)
 
-#### Monolithic Architecture
+---
 
-![Monolithic Architecture](image/001-monolithic-architecture.png)
+## 🎯 Introduction
 
-- **Description:** All parts of the application (UI, business logic, data access) are combined into one large application.
-- **Analogy — A giant layered cake:** If the bottom layer is burnt, you can't replace just that layer; you have to bake the whole cake again. Likewise in a monolith: changing one small feature means redeploying the entire application.
+### Who Is This For?
 
-#### Microservice Architecture
+- **Backend Programmer** — Learns how to make services report their own health
+- **DevOps / SRE Engineer** — Learns how to detect, investigate, and resolve incidents faster
+- **Software Architect** — Understands which signals a distributed system must expose
+- **Web Programmer** — Understands how user-facing performance is measured
 
-![Microservice Architecture](image/002-microservice-architecture.png)
+### What This Material Covers
 
-- **Description:** The application is split into small, independent services (login, payment, cart), each with its own database.
-- **Analogy — LEGO bricks:** If one brick breaks, you just swap that brick without taking apart the whole building. Teams can also work on different bricks at the same time.
+- Theory and concepts behind monitoring and observability
+- Real-world analogies and examples
+- Not tied to any specific tool — Prometheus is covered in [002 — Prometheus](002-prometheus.md)
 
-### B. The DevOps View: Waterfall vs. CI/CD
+### Why Learn Observability?
+
+- **Microservices are the norm** — More services means more places for things to break
+- **Faster recovery** — Good telemetry shortens the time to find and fix problems
+- **Unknown failures** — Distributed systems fail in ways nobody predicted upfront
+- **Career growth** — Core knowledge for DevOps, SRE, and Senior Engineers
+
+---
+
+## 🏛️ From Monolith to Microservices
+
+> **Analogy:** A monolith is a giant layered cake — if the bottom layer is burnt, you can't replace just that layer, you bake the whole cake again. Microservices are LEGO bricks — if one brick breaks, you pull it out and snap in a new one without taking the whole building apart.
+
+### Monolithic Architecture
+
+![Monolithic Architecture](images/001.png)
+
+- All parts of the application — **UI, business logic, and data access** — are combined into one large application
+- Changing one small feature means **redeploying the entire application**
+
+### Microservice Architecture
+
+![Microservice Architecture](images/002.png)
+
+- The application is split into **small, independent services** (login, payment, cart)
+- Each service has **its own database**
+- Teams can work on different services **at the same time**
+
+### Waterfall vs CI/CD
 
 | | Waterfall | CI/CD |
-|---|---|---|
-| **Fits with** | Monolith | Microservices |
-| **Analogy** | Building a house from scratch: design, foundation, walls, and roof must be 100% finished before anyone moves in | A coffee shop that keeps innovating: brew a new menu item, sell it, collect feedback, improve it tomorrow |
-| **Rhythm** | Big and infrequent | Small, frequent, and fast |
+| --- | --- | --- |
+| Fits with | Monolith | Microservices |
+| Analogy | Building a house from scratch — design, foundation, walls, and roof must be 100% done before anyone moves in | A coffee shop that keeps innovating — brew a new drink, sell it, collect feedback, improve it tomorrow |
+| Rhythm | Big and infrequent | Small, frequent, and fast |
 
-### C. Why Do Microservices & CI/CD Need Observability?
+### Why Modern Systems Need Observability
 
 Modern architecture is like a very busy city:
 
-1. **Many services to watch** — like hundreds of shops in one city.
-2. **Communication between services can break** — delivery couriers between services can get lost or stuck.
-3. **More exposed to attacks** — many entrances to guard.
-4. **Code changes constantly** — renovations every day, so the risk of new errors is higher.
+- **Many services to watch** — Like hundreds of shops in one city
+- **Communication between services can break** — Couriers between services get lost or stuck
+- **More exposed to attacks** — Many entrances to guard
+- **Code changes constantly** — Renovations every day, so the risk of new errors is higher
+
+> **Key Insight:** Microservices and CI/CD make change cheap — but every change is also a new chance to break something you can't see from one place.
 
 ---
 
-## 2. Monitoring & the 3 Key Questions
+## 📈 Monitoring
 
-**Monitoring** is the routine activity of collecting and watching system health data. This data is called **telemetry data**, like a doctor's lab results used to find where the illness is.
+> **Analogy:** A doctor's routine check-up. The doctor doesn't wait until you collapse — they take regular lab tests (blood pressure, heart rate) to spot illness early. Those lab results are the system's **telemetry data**.
 
-To check system health, ask **3 key questions**:
+### What Is Monitoring?
 
-1. Is the service **up**?
-2. Is the service **doing its job**?
-3. Is the service **working well** (fast and healthy)?
+- The routine activity of **collecting and watching system health data**
+- The data being collected is called **telemetry data**
+- You decide **upfront** what to watch and what counts as unhealthy
 
-### Analogy: Car Dashboard
+### The 3 Key Questions
 
-![Car Dashboard](image/003-car-dashboard.png)
+- **Is it up?** — Is the service running at all?
+- **Is it doing its job?** — Is it fulfilling its purpose?
+- **Is it working well?** — Is it fast and healthy?
 
-| Question | Indicator in the car |
-|---|---|
-| Up? | RPM needle above 0 (engine is running) |
-| Doing its job? | Car moving at 50 km/h (its main purpose is fulfilled) |
-| Working well? | Not necessarily — the *Check Engine* light is on, a hidden problem exists even though the car still moves |
+### Example: Car Dashboard
 
-### Real Example: *Save the Koala* Website
+![Car Dashboard](images/003.png)
 
-![Save the Koala Website](image/004-save-the-koala-website.png)
+| Question | Indicator in the Car |
+| --- | --- |
+| Is it up? | RPM needle above 0 — the engine is running |
+| Is it doing its job? | Car moving at 50 km/h — its main purpose is fulfilled |
+| Is it working well? | Not necessarily — the *Check Engine* light is on, a hidden problem exists even though the car still moves |
 
-| Question | How to check |
-|---|---|
-| Up? | Send an HTTP `GET`/`HEAD` to the server. If it replies `200 OK`, the website is up. |
-| Doing its job? | Check the error count in the logs (e.g. Python errors). Below a reasonable threshold (e.g. < 5 errors/minute) means normal. |
-| Working well? | Measure response time. Below 20 ms means excellent performance. |
+### Example: Save the Koala Website
+
+![Save the Koala Website](images/004.png)
+
+| Question | How to Check |
+| --- | --- |
+| Is it up? | Send an HTTP `GET`/`HEAD` — a `200 OK` reply means the website is up |
+| Is it doing its job? | Count errors in the logs (e.g. Python errors) — below a threshold (e.g. < 5 errors/minute) means normal |
+| Is it working well? | Measure response time — under 20 ms means excellent performance |
 
 ---
 
-## 3. DevOps Success Metrics: MTTD & MTTR
+## 🔭 Observability
 
-Both metrics measure how fast a team can **detect** and **recover** from system problems.
+> **Analogy:** Monitoring is the **fuel warning light** — it tells you one thing you decided to watch in advance: *"your fuel is low."* Observability is a **workshop with a full diagnostic computer** — when the car breaks down mysteriously, the mechanic traces electricity, fuel pressure, and engine temperature at once to find *why* and *where* it failed, even for problems never seen before.
 
-### A. Mean Time to Detection (MTTD)
+### What Is Observability?
 
-- **Definition:** The average time from when the system starts failing until the team notices.
-- **Analogy — Fire alarm:** Smoke appears at 14:00, the alarm only rings at 14:15. That 15-minute gap is the MTTD.
+- The ability to **understand a system's internal state** purely from the data it produces (telemetry)
+- Combines **metrics, logs, and traces** into one holistic view of the system
+- Helps answer questions you **didn't know you'd need to ask** — the *unknown unknowns*
 
-### B. Mean Time to Resolve (MTTR)
+### Problems with Monitoring Alone
 
-- **Definition:** The average time from when a problem is detected until the system is back to normal.
-- **Analogy — Firefighters:** Counted from when the residents realize there is a fire (14:15) until the fire is out and the kitchen is safe (14:45).
+- **Blind to what you didn't plan for** — A component you forgot to watch gives no signal when it breaks
+- **Tool sprawl** — Adding manual rules and tools one by one leads to many disconnected dashboards
+- **Tells you *when*, not *why*** — An alert fires, but finding the root cause still takes manual digging
 
-### Incident Timeline Example
+### Monitoring vs Observability
+
+| | Monitoring | Observability |
+| --- | --- | --- |
+| Focus | *What* and *when* | *Why* and *where* |
+| How it works | Decide upfront what to watch (e.g. CPU limit 80%) | Collect metrics, logs, and traces broadly and correlate them |
+| Handles | Known failures | Unknown unknowns |
+| Best for | Monoliths with predictable failure points | Distributed systems such as microservices |
+
+> **Note:** Observability doesn't replace monitoring — it builds on it. You still need alerts; observability is what you use after the alert fires.
+
+---
+
+## 📦 Telemetry Data (MELT)
+
+> **Analogy:** A store selling a bag of chips. The **receipt** proves a sale happened (event). The **daily sales chart** summarizes all sales (metric). The **detailed transaction record** tells the full story of one sale (log). The **order tracking** follows one online order from payment to kitchen to delivery (trace).
+
+### What Is MELT?
+
+- **MELT** stands for the 4 main types of telemetry data: **Metric, Event, Log, Trace**
+- Each type answers a different question about the system
+
+### Event
+
+- A record that **one specific action happened at a specific time**
+- Proves an expected action really occurred (button clicked, data saved)
+- Commonly found in platforms like **Kafka**
+- Example: *"1 bag of chips bought at 15:20"*
+
+### Metric
+
+- **Aggregated numbers** summarizing many events over a period of time
+- Great for **trends** and comparing performance against the past
+- Example: *"On average 100 bags sold per minute today"* or *"CPU climbed to 80% at noon"*
+
+### Log
+
+- A **detailed text record** of an event together with its context
+- The main **evidence** when investigating an error
+
+```text
+Item         : Potato Chips
+Price        : Rp10,000
+Time         : 15:20:05.123 WIB
+Cashier ID   : VEND-SURABAYA-04
+Payment      : QRIS
+Status       : Success (200)
+```
+
+### Trace
+
+- Records **one request's journey across services** from start to finish
+- Shows **which service** makes the process slow or fail
+
+```text
+Tap "Pay"
+  ↓
+API Gateway            (10 ms)
+  ↓
+Payment Service        (200 ms)
+  ↓
+Inventory Service      (50 ms)
+  ↓
+Notification Service
+```
+
+If the flow stalls for 5 seconds, the trace points straight at the slow service.
+
+### MELT Compared
+
+| Type | Question Answered | Analogy |
+| --- | --- | --- |
+| **Metric** | What is the trend? | Daily sales chart |
+| **Event** | What happened? | Purchase receipt |
+| **Log** | What are the details? | Detailed transaction record |
+| **Trace** | Where is it slow or failing? | Order tracking |
+
+---
+
+## 🧭 Monitoring Methods
+
+> **Analogy:** A restaurant inspector doesn't check everything the same way. At the cashier, they watch customers and waiting times. In the kitchen, they check how busy the cooks and stoves are. At the entrance, they watch a guest's first impression. Each layer of a system has its own checklist.
+
+### Choosing a Method by Layer
+
+![Monitoring Methods by Layer](images/005.png)
+
+| Layer | Method |
+| --- | --- |
+| **UI Layer** | Core Web Vitals |
+| **Service Layer** | RED Method, Four Golden Signals |
+| **Infrastructure Layer** | USE Method, Four Golden Signals |
+
+### RED Method
+
+Focus on **services** — like watching the cashier at a fast-food restaurant.
+
+- **Rate** — How many customers arrive per minute? *(requests per second)*
+- **Errors** — How many orders fail or are wrong? *(e.g. HTTP 500)*
+- **Duration** — How long do customers wait? *(response time / latency)*
+
+### USE Method
+
+Focus on **infrastructure** — like checking the cooks and kitchen equipment.
+
+- **Utilization** — How busy are the cooks and stoves? *(e.g. CPU 85%, disk 90%)*
+- **Saturation** — How long is the pile of unprocessed orders? *(CPU/network queue; 0 means smooth)*
+- **Errors** — Is any equipment broken? *(e.g. failed disk writes)*
+
+### Four Golden Signals
+
+The **Google SRE** standard — the four most vital signals to watch.
+
+- **Latency** — How long do users wait?
+- **Traffic** — How much demand is coming in?
+- **Errors** — How often does the system fail?
+- **Saturation** — How close is the system to its maximum capacity?
+
+### Core Web Vitals
+
+Focus on **web user experience** — like a guest's first impression when entering a store.
+
+- **LCP (Largest Contentful Paint)** — How fast does the main display become visible?
+- **FID (First Input Delay)** — When the guest rings the bell, how fast does staff respond?
+- **CLS (Cumulative Layout Shift)** — Do the shelves suddenly move while the guest is walking?
+
+> **Note:** Since March 2024, Google replaced **FID** with **INP (Interaction to Next Paint)**, which measures responsiveness to *all* interactions, not just the first one.
+
+---
+
+## 📥 Metric Collection
+
+> **Analogy:** There are two ways a boss can get reports. Either every employee emails their report each evening (**push**), or the boss walks desk to desk at set times to collect them (**scrape**).
+
+### Push Method
+
+- The application **actively sends** metrics to a central server over TCP, UDP, or HTTP
+- Example: an app sends metrics to **StatsD**, which stores them in **Graphite**
+
+### Scrape Method
+
+- The application **exposes an endpoint** (usually `/metrics`)
+- The monitoring server **visits periodically** to pull the data
+- Example: **Prometheus** scrapes an application's metrics endpoint
+
+### Choosing Push or Scrape
+
+**1. Type of System**
+
+- **Scrape** — Like a permanent employee at a fixed desk; the boss can visit anytime. Suits **long-running services** with a clear address
+- **Push** — Like an express courier who finishes and goes home with the phone off; they must report before leaving. Suits **short-lived** jobs such as *serverless functions* and *batch jobs*
+
+**2. Scalability**
+
+- **Scrape** — Like a census officer going door to door; 10 houses is easy, 10,000 is overwhelming. The burden sits on the central server
+- **Push** — Like 10,000 family members messaging Dad's phone in the same second; the central server gets a *traffic jam*
+
+**3. Detecting a Dead Service**
+
+- **Scrape** — Like a teacher taking attendance; when Budi doesn't answer, the teacher **knows immediately**. A failed scrape means the service is down
+- **Push** — Like waiting for permission slips; if Budi collapses on the way, the teacher never hears about it. Push needs a **heartbeat** to tell "dead" from "just late"
+
+> **Gotcha:** With push, the application must know the central server's address, and metrics sent while the network is down are simply lost.
+
+### Push vs Scrape
+
+| | Scrape | Push |
+| --- | --- | --- |
+| Who starts the transfer | Monitoring server | Application |
+| Best for | Long-running services | Short-lived jobs |
+| Scalability burden | On the monitoring server | Traffic spikes at the central server |
+| Detecting dead services | Immediate | Needs a heartbeat |
+| Example | Prometheus | StatsD + Graphite |
+
+---
+
+## ⏱️ MTTD & MTTR
+
+> **Analogy:** A kitchen fire. **MTTD** is how long the smoke spreads before the alarm wakes anyone up. **MTTR** is how long it takes from waking up until the fire is out and the kitchen is safe again.
+
+### Mean Time to Detection (MTTD)
+
+- The average time from when the system **starts failing** until the team **notices**
+- Lower is better — good monitoring and alerting shrink it
+
+### Mean Time to Resolve (MTTR)
+
+- The average time from when a problem is **detected** until the system is **back to normal**
+- Lower is better — good observability shrinks it, because finding the root cause is faster
+
+### Example: Incident Timeline
 
 | Time | Event |
-|---|---|
+| --- | --- |
 | 14:00 | Payment feature errors out because of a database problem |
 | 14:15 | Monitoring system sends an *alert* to the team |
 | 14:45 | Database fixed, payments back to normal |
@@ -106,175 +370,46 @@ Both metrics measure how fast a team can **detect** and **recover** from system 
 - **MTTD = 15 minutes** (14:00 → 14:15)
 - **MTTR = 30 minutes** (14:15 → 14:45)
 
-> A team's MTTD/MTTR is the average across all incidents in a period (e.g. one month).
+> **Note:** A team's MTTD and MTTR are averages across all incidents in a period (e.g. one month).
 
 ---
 
-## 4. Monitoring Methods
+## 🎯 Quick Reference
 
-![Monitoring Methods by Layer](image/005-monitoring-methods-by-layer.png)
-
-Each system layer has the method that suits it best:
-
-| Layer | Method |
-|---|---|
-| UI Layer | Core Web Vitals |
-| Service Layer | RED Method, Four Golden Signals |
-| Infrastructure Layer | USE Method, Four Golden Signals |
-
-### A. RED Method — Focus on Services
-
-*Analogy: watching the cashier at a fast-food restaurant.*
-
-1. **Rate** — How many customers arrive per minute? *(requests per second)*
-2. **Errors** — How many orders fail or are wrong? *(e.g. HTTP 500)*
-3. **Duration** — How long do customers wait for their order? *(response time / latency)*
-
-### B. USE Method — Focus on Infrastructure
-
-*Analogy: checking the condition of the cooks and the kitchen equipment.*
-
-1. **Utilization** — How busy are the cooks and stoves? *(e.g. CPU 85%, disk 90%)*
-2. **Saturation** — How long is the pile of unprocessed order slips? *(CPU/network queue; 0 means smooth)*
-3. **Errors** — Is any kitchen equipment broken? *(e.g. failed to write to disk)*
-
-### C. Four Golden Signals — Google SRE Standard
-
-1. **Latency** — How long do users wait?
-2. **Traffic** — How much demand is coming in?
-3. **Errors** — How often does the system fail?
-4. **Saturation** — How close is the system to its maximum capacity?
-
-### D. Core Web Vitals — Focus on Web User Experience
-
-*Analogy: a guest's first impression when entering a store.*
-
-1. **LCP (Largest Contentful Paint)** — How fast does the main display become visible? *(time for the largest element to appear)*
-2. **FID (First Input Delay)** — When the guest presses the service bell, how fast does the staff respond? *(response to the first click)*
-3. **CLS (Cumulative Layout Shift)** — Do the shelves suddenly move while the guest is walking? *(layout stability while the page loads)*
-
-> **Note:** Since March 2024, Google replaced **FID** with **INP (Interaction to Next Paint)**, which measures responsiveness to *all* interactions, not just the first one.
+| Concept | Problem Solved | Key Trade-off |
+| --- | --- | --- |
+| **Monitoring** | Detects known failures early | Blind to what wasn't planned for |
+| **Observability** | Explains *why* and *where* unknown failures happen | More data to collect, store, and correlate |
+| **Metric** | Cheap trend and alerting data | Loses per-request detail |
+| **Event** | Proves an action happened | No aggregated view on its own |
+| **Log** | Rich detail for investigation | Expensive to store and search at scale |
+| **Trace** | Pinpoints the slow service in a request chain | Requires instrumenting every service |
+| **RED Method** | Measures service health from the user's side | Doesn't show resource exhaustion |
+| **USE Method** | Measures infrastructure health | Doesn't show user-facing impact |
+| **Four Golden Signals** | One checklist covering services and infrastructure | Still needs per-layer detail |
+| **Core Web Vitals** | Measures real user experience in the browser | Frontend only |
+| **Push** | Captures short-lived jobs | Harder to detect dead services |
+| **Scrape** | Detects dead services immediately | Can't reach short-lived jobs |
+| **MTTD / MTTR** | Measures how fast the team detects and recovers | Only meaningful as an average over many incidents |
 
 ---
 
-## 5. Observability vs. Monitoring
+## 💡 Best Practices
 
-### What is Observability?
+**✅ Do This**
 
-**Observability** is the ability to understand a system's internal state purely from the external data it produces (telemetry).
+- **Answer the 3 key questions for every service** — up, doing its job, working well
+- **Use RED for services, USE for infrastructure** — and Core Web Vitals for the frontend
+- **Collect all of MELT** — metrics for alerts, logs for detail, traces for cross-service flows
+- **Prefer scrape for long-running services** — a failed scrape is a free health check
+- **Use push only for short-lived jobs** — and pair it with a heartbeat
+- **Track MTTD and MTTR over time** — they show whether your observability is actually improving
 
-- **Monitoring** is like the **fuel warning light**: it tells you one thing you decided to watch in advance — *"your fuel is running low."*
-- **Observability** is like a **workshop with a full diagnostic computer**: when the car breaks down mysteriously, the mechanic can trace electricity, fuel pressure, and engine temperature at once to find *why* and *where* the fault is — even for problems never seen before (*unknown unknowns*).
+**❌ Avoid This**
 
-### Comparison
+- **Monitoring only what you expect to break** — the next outage is usually something you didn't expect
+- **Adding a new tool for every problem** — tool sprawl makes correlation harder, not easier
+- **Relying on logs alone in microservices** — without traces, you can't follow a request across services
+- **Alerting on everything** — noisy alerts get ignored and raise MTTD
 
-| Aspect | Monitoring | Observability |
-|---|---|---|
-| **Focus** | *What* and *when* | *Why* and *where* |
-| **How it works** | Decide upfront what to watch (e.g. CPU limit 80°C) | Collect metrics, logs, and traces comprehensively and combine them (*holistic view*) |
-| **Weakness / Strength** | A component you forgot to watch gives no signal; too many manual rules cause **tool sprawl** | Can handle **unknown unknowns** |
-| **Best for** | Monoliths, where failure points are easy to predict | Distributed systems such as microservices |
-
----
-
-## 6. Metric Collection: Push vs. Scrape
-
-There are two ways a collection system gets information from an application.
-
-### A. Push Method
-
-- **Description:** The application **actively sends** metrics to a central server (*central endpoint*) over TCP, UDP, or HTTP.
-- **Analogy — Employee's daily report:** The employee emails the report to the boss every evening without being asked.
-- **Example:** An app sends metrics to **StatsD**, which stores them in **Graphite**.
-
-### B. Scrape Method
-
-- **Description:** The application **exposes an endpoint** (usually `/metrics`), and the monitoring server **visits periodically** to pull the data.
-- **Analogy — Classroom cleanliness inspection:** The duty teacher walks desk to desk at set times, without waiting for students to report.
-- **Example:** **Prometheus** scrapes an application's metrics endpoint.
-
-### C. Choosing Push or Scrape
-
-#### 1. Type of System & Application
-
-*Does the application live in one place all the time, or only briefly?*
-
-- **Scrape — Permanent employee in a cubicle:** The desk is fixed and doesn't move, so the boss can visit anytime. Suits **long-running services** with a clear address.
-- **Push — Express courier:** Finishes the job and goes straight home with the phone off. If they don't report before leaving, the office never learns the result. Suits **short-lived/ephemeral** applications such as *serverless functions* or *batch jobs* that live only a few seconds.
-
-#### 2. Scalability
-
-*What happens if the applications grow from 10 to 10,000?*
-
-- **Scrape — Census officer going door to door:** 10 houses is easy, 10,000 is overwhelming. The central server controls the schedule, but all the burden is on its side.
-- **Push — A noisy family WhatsApp group:** 10,000 members message Dad's phone at the same second, and it lags or crashes (a *traffic jam* at the central server).
-
-#### 3. Complexity & Detecting a Dead Service
-
-*How do you know if an application suddenly dies?*
-
-- **Scrape — Teacher taking attendance:** Budi's name is called, no answer, and the teacher **knows immediately** Budi is absent. If a scrape fails, the system instantly knows the service is *down*.
-- **Push — Students sending a permission slip:** Budi collapsed on the way and couldn't send his slip. A teacher who only waits (*passively*) won't know Budi has a problem. Push needs extra tricks such as a **heartbeat** to tell "dead" from "just late". The app also has to know the central server's address, and data can be lost if the network drops.
-
-### Summary
-
-| Consideration | Scrape | Push |
-|---|---|---|
-| Application type | Long-running, fixed address | Short-lived, ephemeral |
-| Scalability | Burden on the monitoring server | Risk of traffic spikes to the central server |
-| Detecting dead services | Detected immediately | Needs a heartbeat |
-
----
-
-## 7. Types of Telemetry Data (MELT)
-
-**MELT** stands for the 4 main telemetry types: **Metric, Event, Log, Trace**. The examples below use the analogy of buying a bag of chips at a store.
-
-### A. Event
-
-- **Definition:** A record that **one specific action happened at a specific time**.
-- **Purpose:** Proves an action really occurred (button clicked, data saved). Often found in platforms like *Kafka*.
-- **Analogy — A purchase receipt:** *"1 bag of chips bought at 15:20."* It is discrete, happening once.
-
-### B. Metric
-
-- **Definition:** **Aggregated numbers** summarizing many events over a period of time.
-- **Purpose:** See trends and compare performance against the past.
-- **Analogy — Sales chart:** *"On average 100 bags sold per minute today"* or *"CPU climbed to 80% at noon."*
-
-### C. Log
-
-- **Definition:** A **detailed text record** of an event together with its context.
-- **Purpose:** The main evidence when investigating errors.
-- **Analogy — A very detailed receipt:**
-
-  ```text
-  Item         : Potato Chips
-  Price        : Rp10,000
-  Time         : 15:20:05.123 WIB
-  Cashier ID   : VEND-SURABAYA-04
-  Payment      : QRIS
-  Status       : Success (200)
-  ```
-
-### D. Trace
-
-- **Definition:** A record of **one request's journey across services** from start to finish.
-- **Purpose:** Shows which part is slow or failing.
-- **Analogy — Tracking an online order:**
-
-  1. Tap "Pay" → **API Gateway** (10 ms)
-  2. Deduct balance → **Payment Service** (200 ms)
-  3. Print the order in the kitchen → **Inventory Service** (50 ms)
-  4. Send notification → **Notification Service**
-
-  If the process stalls for 5 seconds, the trace immediately shows where (e.g. in the *Payment Service*).
-
-### MELT Summary
-
-| Type | Question answered | Analogy |
-|---|---|---|
-| Metric | What is the trend? | Sales chart |
-| Event | What happened? | Purchase receipt |
-| Log | What are the details? | Detailed receipt |
-| Trace | Where is it slow/failing? | Package tracking |
+> Reference: [Google SRE Book — Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) · [Brendan Gregg — The USE Method](https://www.brendangregg.com/usemethod.html) · [web.dev — Core Web Vitals](https://web.dev/articles/vitals)
