@@ -1,280 +1,280 @@
 # 001 — Foundations of Observability
 
-## Daftar Isi
+## Table of Contents
 
-1. [Evolusi Arsitektur Aplikasi & DevOps](#1-evolusi-arsitektur-aplikasi--devops)
-2. [Monitoring & 3 Pertanyaan Utama](#2-monitoring--3-pertanyaan-utama)
-3. [Metrik Keberhasilan DevOps: MTTD & MTTR](#3-metrik-keberhasilan-devops-mttd--mttr)
-4. [Metode-Metode Monitoring](#4-metode-metode-monitoring)
+1. [Application Architecture & DevOps Evolution](#1-application-architecture--devops-evolution)
+2. [Monitoring & the 3 Key Questions](#2-monitoring--the-3-key-questions)
+3. [DevOps Success Metrics: MTTD & MTTR](#3-devops-success-metrics-mttd--mttr)
+4. [Monitoring Methods](#4-monitoring-methods)
 5. [Observability vs. Monitoring](#5-observability-vs-monitoring)
-6. [Metode Pengumpulan Metrik: Push vs. Scrape](#6-metode-pengumpulan-metrik-push-vs-scrape)
-7. [Tipe Telemetry Data (MELT)](#7-tipe-telemetry-data-melt)
+6. [Metric Collection: Push vs. Scrape](#6-metric-collection-push-vs-scrape)
+7. [Types of Telemetry Data (MELT)](#7-types-of-telemetry-data-melt)
 
 ---
 
-## 1. Evolusi Arsitektur Aplikasi & DevOps
+## 1. Application Architecture & DevOps Evolution
 
-### A. Arsitektur Monolitik vs. Mikroservis
+### A. Monolithic vs. Microservice Architecture
 
-#### Arsitektur Monolitik
+#### Monolithic Architecture
 
 ![Monolithic Architecture](image/001-monolithic-architecture.png)
 
-- **Penjelasan:** Semua bagian aplikasi (tampilan, logika bisnis, dan akses data) digabung menjadi satu aplikasi besar.
-- **Analogi — Kue Lapis Raksasa:** Kalau lapisan paling bawah gosong, kamu tidak bisa mengganti lapisan itu saja; seluruh kue harus dibuat ulang. Begitu pula monolitik: mengubah satu fitur kecil berarti seluruh aplikasi harus di-*deploy* ulang.
+- **Description:** All parts of the application (UI, business logic, data access) are combined into one large application.
+- **Analogy — A giant layered cake:** If the bottom layer is burnt, you can't replace just that layer; you have to bake the whole cake again. Likewise in a monolith: changing one small feature means redeploying the entire application.
 
-#### Arsitektur Mikroservis
+#### Microservice Architecture
 
 ![Microservice Architecture](image/002-microservice-architecture.png)
 
-- **Penjelasan:** Aplikasi dipecah menjadi layanan kecil yang berdiri sendiri (login, pembayaran, keranjang), masing-masing dengan database sendiri.
-- **Analogi — Balok LEGO:** Kalau satu balok patah, cukup cabut dan ganti balok itu tanpa membongkar seluruh bangunan. Tim juga bisa mengerjakan balok yang berbeda secara bersamaan.
+- **Description:** The application is split into small, independent services (login, payment, cart), each with its own database.
+- **Analogy — LEGO bricks:** If one brick breaks, you just swap that brick without taking apart the whole building. Teams can also work on different bricks at the same time.
 
-### B. Sudut Pandang DevOps: Waterfall vs. CI/CD
+### B. The DevOps View: Waterfall vs. CI/CD
 
 | | Waterfall | CI/CD |
 |---|---|---|
-| **Cocok dengan** | Monolitik | Mikroservis |
-| **Analogi** | Membangun rumah dari nol: desain, fondasi, tembok, atap harus 100% selesai sebelum dihuni | Warung kopi yang terus berinovasi: racik menu baru, jual, minta feedback, perbaiki besok |
-| **Ritme** | Besar dan jarang | Kecil, sering, dan cepat |
+| **Fits with** | Monolith | Microservices |
+| **Analogy** | Building a house from scratch: design, foundation, walls, and roof must be 100% finished before anyone moves in | A coffee shop that keeps innovating: brew a new menu item, sell it, collect feedback, improve it tomorrow |
+| **Rhythm** | Big and infrequent | Small, frequent, and fast |
 
-### C. Mengapa Mikroservis & CI/CD Butuh Observability?
+### C. Why Do Microservices & CI/CD Need Observability?
 
-Arsitektur modern ibarat kota yang sangat sibuk:
+Modern architecture is like a very busy city:
 
-1. **Banyak layanan yang harus diawasi** — seperti ratusan toko dalam satu kota.
-2. **Komunikasi antar-layanan bisa putus** — kurir antar-layanan bisa tersesat atau macet.
-3. **Lebih rentan serangan** — banyak pintu masuk yang harus dijaga.
-4. **Perubahan kode terjadi setiap saat** — renovasi setiap hari, risiko error baru lebih tinggi.
+1. **Many services to watch** — like hundreds of shops in one city.
+2. **Communication between services can break** — delivery couriers between services can get lost or stuck.
+3. **More exposed to attacks** — many entrances to guard.
+4. **Code changes constantly** — renovations every day, so the risk of new errors is higher.
 
 ---
 
-## 2. Monitoring & 3 Pertanyaan Utama
+## 2. Monitoring & the 3 Key Questions
 
-**Monitoring** adalah kegiatan mengumpulkan dan memantau data kesehatan sistem secara rutin. Data ini disebut **Telemetry Data**, ibarat hasil cek laboratorium dokter untuk mencari letak penyakit.
+**Monitoring** is the routine activity of collecting and watching system health data. This data is called **telemetry data**, like a doctor's lab results used to find where the illness is.
 
-Untuk mengecek kesehatan sistem, ajukan **3 pertanyaan utama**:
+To check system health, ask **3 key questions**:
 
-1. Apakah layanannya **menyala**?
-2. Apakah layanannya **berfungsi** sesuai tugasnya?
-3. Apakah layanannya **bekerja dengan baik** (cepat dan sehat)?
+1. Is the service **up**?
+2. Is the service **doing its job**?
+3. Is the service **working well** (fast and healthy)?
 
-### Analogi: Dashboard Mobil
+### Analogy: Car Dashboard
 
 ![Car Dashboard](image/003-car-dashboard.png)
 
-| Pertanyaan | Indikator di Mobil |
+| Question | Indicator in the car |
 |---|---|
-| Menyala? | Jarum RPM di atas 0 (mesin hidup) |
-| Berfungsi? | Mobil melaju 50 km/jam (tugas utamanya terpenuhi) |
-| Bekerja dengan baik? | Belum tentu — lampu *Check Engine* menyala, ada masalah tersembunyi meski mobil masih jalan |
+| Up? | RPM needle above 0 (engine is running) |
+| Doing its job? | Car moving at 50 km/h (its main purpose is fulfilled) |
+| Working well? | Not necessarily — the *Check Engine* light is on, a hidden problem exists even though the car still moves |
 
-### Contoh Nyata: Website *Save the Koala*
+### Real Example: *Save the Koala* Website
 
 ![Save the Koala Website](image/004-save-the-koala-website.png)
 
-| Pertanyaan | Cara Cek |
+| Question | How to check |
 |---|---|
-| Menyala? | Kirim HTTP `GET`/`HEAD` ke server. Jika membalas `200 OK`, website menyala. |
-| Berfungsi? | Cek jumlah error di log (misal error Python). Di bawah batas wajar (misal < 5 error/menit) berarti normal. |
-| Bekerja dengan baik? | Ukur waktu respons. Di bawah 20 ms berarti performanya prima. |
+| Up? | Send an HTTP `GET`/`HEAD` to the server. If it replies `200 OK`, the website is up. |
+| Doing its job? | Check the error count in the logs (e.g. Python errors). Below a reasonable threshold (e.g. < 5 errors/minute) means normal. |
+| Working well? | Measure response time. Below 20 ms means excellent performance. |
 
 ---
 
-## 3. Metrik Keberhasilan DevOps: MTTD & MTTR
+## 3. DevOps Success Metrics: MTTD & MTTR
 
-Kedua metrik ini mengukur kecepatan tim dalam **mendeteksi** dan **memulihkan** masalah sistem.
+Both metrics measure how fast a team can **detect** and **recover** from system problems.
 
 ### A. Mean Time to Detection (MTTD)
 
-- **Definisi:** Rata-rata waktu sejak sistem mulai rusak hingga tim menyadarinya.
-- **Analogi — Alarm Kebakaran:** Asap muncul pukul 14.00, alarm baru berbunyi pukul 14.15. Jeda 15 menit itulah MTTD.
+- **Definition:** The average time from when the system starts failing until the team notices.
+- **Analogy — Fire alarm:** Smoke appears at 14:00, the alarm only rings at 14:15. That 15-minute gap is the MTTD.
 
 ### B. Mean Time to Resolve (MTTR)
 
-- **Definisi:** Rata-rata waktu sejak masalah terdeteksi hingga sistem pulih normal.
-- **Analogi — Pemadam Kebakaran:** Dihitung dari penghuni sadar ada kebakaran (14.15) hingga api padam dan dapur aman (14.45).
+- **Definition:** The average time from when a problem is detected until the system is back to normal.
+- **Analogy — Firefighters:** Counted from when the residents realize there is a fire (14:15) until the fire is out and the kitchen is safe (14:45).
 
-### Contoh Timeline Insiden
+### Incident Timeline Example
 
-| Waktu | Kejadian |
+| Time | Event |
 |---|---|
-| 14.00 | Fitur pembayaran error karena gangguan database |
-| 14.15 | Sistem monitoring mengirim *alert* ke tim |
-| 14.45 | Database diperbaiki, pembayaran normal kembali |
+| 14:00 | Payment feature errors out because of a database problem |
+| 14:15 | Monitoring system sends an *alert* to the team |
+| 14:45 | Database fixed, payments back to normal |
 
-- **MTTD = 15 menit** (14.00 → 14.15)
-- **MTTR = 30 menit** (14.15 → 14.45)
+- **MTTD = 15 minutes** (14:00 → 14:15)
+- **MTTR = 30 minutes** (14:15 → 14:45)
 
-> Nilai MTTD/MTTR tim adalah rata-rata dari semua insiden dalam satu periode (misal sebulan).
+> A team's MTTD/MTTR is the average across all incidents in a period (e.g. one month).
 
 ---
 
-## 4. Metode-Metode Monitoring
+## 4. Monitoring Methods
 
 ![Monitoring Methods by Layer](image/005-monitoring-methods-by-layer.png)
 
-Setiap lapisan sistem punya metode yang paling cocok:
+Each system layer has the method that suits it best:
 
-| Lapisan | Metode |
+| Layer | Method |
 |---|---|
 | UI Layer | Core Web Vitals |
 | Service Layer | RED Method, Four Golden Signals |
 | Infrastructure Layer | USE Method, Four Golden Signals |
 
-### A. RED Method — Fokus pada Layanan
+### A. RED Method — Focus on Services
 
-*Analogi: mengamati kasir di restoran cepat saji.*
+*Analogy: watching the cashier at a fast-food restaurant.*
 
-1. **Rate** — Berapa pelanggan yang datang per menit? *(request per detik)*
-2. **Errors** — Berapa pesanan yang gagal atau salah? *(misal HTTP 500)*
-3. **Duration** — Berapa lama pelanggan menunggu pesanan? *(response time / latency)*
+1. **Rate** — How many customers arrive per minute? *(requests per second)*
+2. **Errors** — How many orders fail or are wrong? *(e.g. HTTP 500)*
+3. **Duration** — How long do customers wait for their order? *(response time / latency)*
 
-### B. USE Method — Fokus pada Infrastruktur
+### B. USE Method — Focus on Infrastructure
 
-*Analogi: mengecek kondisi koki dan peralatan dapur.*
+*Analogy: checking the condition of the cooks and the kitchen equipment.*
 
-1. **Utilization** — Seberapa sibuk koki dan kompor? *(misal CPU 85%, disk 90%)*
-2. **Saturation** — Seberapa panjang tumpukan nota yang belum dikerjakan? *(antrean CPU/jaringan; 0 berarti lancar)*
-3. **Errors** — Adakah alat dapur yang rusak? *(misal gagal menulis ke disk)*
+1. **Utilization** — How busy are the cooks and stoves? *(e.g. CPU 85%, disk 90%)*
+2. **Saturation** — How long is the pile of unprocessed order slips? *(CPU/network queue; 0 means smooth)*
+3. **Errors** — Is any kitchen equipment broken? *(e.g. failed to write to disk)*
 
-### C. Four Golden Signals — Standar Google SRE
+### C. Four Golden Signals — Google SRE Standard
 
-1. **Latency** — Seberapa lama pengguna menunggu?
-2. **Traffic** — Seberapa ramai permintaan yang masuk?
-3. **Errors** — Seberapa sering sistem gagal?
-4. **Saturation** — Seberapa dekat sistem ke batas kapasitas maksimal?
+1. **Latency** — How long do users wait?
+2. **Traffic** — How much demand is coming in?
+3. **Errors** — How often does the system fail?
+4. **Saturation** — How close is the system to its maximum capacity?
 
-### D. Core Web Vitals — Fokus pada Pengalaman Pengguna Web
+### D. Core Web Vitals — Focus on Web User Experience
 
-*Analogi: kesan pertama tamu saat masuk toko.*
+*Analogy: a guest's first impression when entering a store.*
 
-1. **LCP (Largest Contentful Paint)** — Seberapa cepat pajangan utama terlihat? *(kecepatan elemen terbesar muncul)*
-2. **FID (First Input Delay)** — Saat tamu menekan bel, seberapa cepat pelayan merespons? *(respons klik pertama)*
-3. **CLS (Cumulative Layout Shift)** — Apakah rak tiba-tiba bergeser saat tamu berjalan? *(kestabilan tata letak saat halaman dimuat)*
+1. **LCP (Largest Contentful Paint)** — How fast does the main display become visible? *(time for the largest element to appear)*
+2. **FID (First Input Delay)** — When the guest presses the service bell, how fast does the staff respond? *(response to the first click)*
+3. **CLS (Cumulative Layout Shift)** — Do the shelves suddenly move while the guest is walking? *(layout stability while the page loads)*
 
-> **Catatan:** Sejak Maret 2024, Google mengganti **FID** dengan **INP (Interaction to Next Paint)**, yang mengukur respons terhadap *semua* interaksi, bukan hanya yang pertama.
+> **Note:** Since March 2024, Google replaced **FID** with **INP (Interaction to Next Paint)**, which measures responsiveness to *all* interactions, not just the first one.
 
 ---
 
 ## 5. Observability vs. Monitoring
 
-### Apa itu Observability?
+### What is Observability?
 
-**Observability (keteramatan)** adalah kemampuan memahami kondisi internal sistem hanya dari data luar yang dihasilkannya (telemetri).
+**Observability** is the ability to understand a system's internal state purely from the external data it produces (telemetry).
 
-- **Monitoring** seperti **lampu indikator bensin**: memberi tahu satu hal yang sudah kamu tentukan sejak awal — *"bensinmu mau habis."*
-- **Observability** seperti **bengkel dengan komputer diagnostik lengkap**: saat mobil mogok secara misterius, mekanik bisa melacak listrik, tekanan bahan bakar, dan suhu mesin sekaligus untuk menemukan *mengapa* dan *di mana* kerusakannya — bahkan untuk masalah yang belum pernah terjadi (*unknown unknowns*).
+- **Monitoring** is like the **fuel warning light**: it tells you one thing you decided to watch in advance — *"your fuel is running low."*
+- **Observability** is like a **workshop with a full diagnostic computer**: when the car breaks down mysteriously, the mechanic can trace electricity, fuel pressure, and engine temperature at once to find *why* and *where* the fault is — even for problems never seen before (*unknown unknowns*).
 
-### Perbandingan
+### Comparison
 
-| Aspek | Monitoring | Observability |
+| Aspect | Monitoring | Observability |
 |---|---|---|
-| **Fokus** | *Apa* dan *kapan* | *Mengapa* dan *di mana* |
-| **Cara kerja** | Tentukan dulu apa yang diawasi (misal batas CPU 80°C) | Kumpulkan metrik, log, dan trace secara menyeluruh lalu satukan (*holistic view*) |
-| **Kelemahan / Kelebihan** | Komponen yang lupa dipantau tidak akan memberi tanda; aturan manual berlebih memicu **tool sprawl** | Mampu menangani **unknown unknowns** |
-| **Cocok untuk** | Monolitik, titik rawannya mudah ditebak | Sistem terdistribusi seperti mikroservis |
+| **Focus** | *What* and *when* | *Why* and *where* |
+| **How it works** | Decide upfront what to watch (e.g. CPU limit 80°C) | Collect metrics, logs, and traces comprehensively and combine them (*holistic view*) |
+| **Weakness / Strength** | A component you forgot to watch gives no signal; too many manual rules cause **tool sprawl** | Can handle **unknown unknowns** |
+| **Best for** | Monoliths, where failure points are easy to predict | Distributed systems such as microservices |
 
 ---
 
-## 6. Metode Pengumpulan Metrik: Push vs. Scrape
+## 6. Metric Collection: Push vs. Scrape
 
-Ada dua cara sistem pengumpul data mendapatkan informasi dari aplikasi.
+There are two ways a collection system gets information from an application.
 
-### A. Push Method (Dorong)
+### A. Push Method
 
-- **Penjelasan:** Aplikasi **aktif mengirim** metrik ke server pusat (*central endpoint*) lewat TCP, UDP, atau HTTP.
-- **Analogi — Laporan Harian Pegawai:** Karyawan mengirim laporan ke email bos setiap sore tanpa diminta.
-- **Contoh:** Aplikasi mengirim metrik ke **StatsD**, lalu disimpan di **Graphite**.
+- **Description:** The application **actively sends** metrics to a central server (*central endpoint*) over TCP, UDP, or HTTP.
+- **Analogy — Employee's daily report:** The employee emails the report to the boss every evening without being asked.
+- **Example:** An app sends metrics to **StatsD**, which stores them in **Graphite**.
 
-### B. Scrape Method (Tarik)
+### B. Scrape Method
 
-- **Penjelasan:** Aplikasi **menyediakan endpoint** (biasanya `/metrics`), lalu server monitoring **datang secara berkala** untuk menarik datanya.
-- **Analogi — Inspeksi Kebersihan Kelas:** Guru piket berkeliling memeriksa setiap meja pada jam tertentu, tanpa menunggu murid melapor.
-- **Contoh:** **Prometheus** men-*scrape* endpoint metrik aplikasi.
+- **Description:** The application **exposes an endpoint** (usually `/metrics`), and the monitoring server **visits periodically** to pull the data.
+- **Analogy — Classroom cleanliness inspection:** The duty teacher walks desk to desk at set times, without waiting for students to report.
+- **Example:** **Prometheus** scrapes an application's metrics endpoint.
 
-### C. Memilih Push atau Scrape?
+### C. Choosing Push or Scrape
 
-#### 1. Tipe Sistem & Aplikasi
+#### 1. Type of System & Application
 
-*Apakah aplikasi hidup terus di satu tempat, atau hanya sebentar lalu mati?*
+*Does the application live in one place all the time, or only briefly?*
 
-- **Scrape — Pegawai Tetap di Kubikel:** Mejanya jelas dan tidak pindah, jadi bos bisa mendatanginya kapan saja. Cocok untuk **long-running services** dengan alamat yang jelas.
-- **Push — Kurir Paket Kilat:** Selesai tugas langsung pulang dan HP mati. Kalau tidak melapor sebelum pulang, kantor tidak akan tahu hasil kerjanya. Cocok untuk aplikasi **short-lived/ephemeral** seperti *serverless functions* atau *batch jobs* yang hanya hidup beberapa detik.
+- **Scrape — Permanent employee in a cubicle:** The desk is fixed and doesn't move, so the boss can visit anytime. Suits **long-running services** with a clear address.
+- **Push — Express courier:** Finishes the job and goes straight home with the phone off. If they don't report before leaving, the office never learns the result. Suits **short-lived/ephemeral** applications such as *serverless functions* or *batch jobs* that live only a few seconds.
 
-#### 2. Skalabilitas
+#### 2. Scalability
 
-*Apa yang terjadi jika aplikasi membengkak dari 10 menjadi 10.000?*
+*What happens if the applications grow from 10 to 10,000?*
 
-- **Scrape — Petugas Sensus Keliling:** 10 rumah mudah, 10.000 rumah bikin kewalahan. Server pusat memegang kendali jadwal, tapi seluruh beban ada di sisinya.
-- **Push — Grup WhatsApp Keluarga yang Heboh:** 10.000 anggota mengirim chat ke HP Ayah di detik yang sama, HP langsung *lag* atau *down* (*traffic jam* di server pusat).
+- **Scrape — Census officer going door to door:** 10 houses is easy, 10,000 is overwhelming. The central server controls the schedule, but all the burden is on its side.
+- **Push — A noisy family WhatsApp group:** 10,000 members message Dad's phone at the same second, and it lags or crashes (a *traffic jam* at the central server).
 
-#### 3. Kompleksitas & Deteksi Layanan Mati
+#### 3. Complexity & Detecting a Dead Service
 
-*Bagaimana tahu jika aplikasi tiba-tiba mati?*
+*How do you know if an application suddenly dies?*
 
-- **Scrape — Guru Mengabsen di Kelas:** Nama Budi dipanggil, tidak menjawab, guru **langsung tahu** Budi tidak masuk. Jika scrape gagal, sistem langsung tahu layanan *down*.
-- **Push — Murid Mengirim Surat Izin:** Budi pingsan di jalan dan tidak sempat mengirim surat. Guru yang hanya menunggu (*pasif*) tidak tahu Budi bermasalah. Push butuh trik tambahan seperti **heartbeat** untuk membedakan "mati" dari "telat kirim". Selain itu, aplikasi harus tahu alamat server pusat, dan data bisa hilang jika jaringan putus.
+- **Scrape — Teacher taking attendance:** Budi's name is called, no answer, and the teacher **knows immediately** Budi is absent. If a scrape fails, the system instantly knows the service is *down*.
+- **Push — Students sending a permission slip:** Budi collapsed on the way and couldn't send his slip. A teacher who only waits (*passively*) won't know Budi has a problem. Push needs extra tricks such as a **heartbeat** to tell "dead" from "just late". The app also has to know the central server's address, and data can be lost if the network drops.
 
-### Ringkasan
+### Summary
 
-| Pertimbangan | Scrape | Push |
+| Consideration | Scrape | Push |
 |---|---|---|
-| Tipe aplikasi | Long-running, alamat tetap | Short-lived, ephemeral |
-| Skalabilitas | Beban di server pemantau | Risiko lonjakan trafik ke server pusat |
-| Deteksi layanan mati | Langsung terdeteksi | Butuh heartbeat |
+| Application type | Long-running, fixed address | Short-lived, ephemeral |
+| Scalability | Burden on the monitoring server | Risk of traffic spikes to the central server |
+| Detecting dead services | Detected immediately | Needs a heartbeat |
 
 ---
 
-## 7. Tipe Telemetry Data (MELT)
+## 7. Types of Telemetry Data (MELT)
 
-**MELT** adalah 4 jenis data telemetri utama: **Metric, Event, Log, Trace**. Contoh di bawah memakai analogi transaksi pembelian keripik di sebuah toko.
+**MELT** stands for the 4 main telemetry types: **Metric, Event, Log, Trace**. The examples below use the analogy of buying a bag of chips at a store.
 
-### A. Event (Kejadian)
+### A. Event
 
-- **Definisi:** Catatan bahwa **satu tindakan spesifik terjadi pada waktu tertentu**.
-- **Fungsi:** Membuktikan aksi benar-benar terjadi (tombol diklik, data tersimpan). Sering ditemui di platform seperti *Kafka*.
-- **Analogi — Struk Belanja:** *"1 kantong keripik dibeli pukul 15:20."* Kejadiannya diskrit, terjadi sekali.
+- **Definition:** A record that **one specific action happened at a specific time**.
+- **Purpose:** Proves an action really occurred (button clicked, data saved). Often found in platforms like *Kafka*.
+- **Analogy — A purchase receipt:** *"1 bag of chips bought at 15:20."* It is discrete, happening once.
 
-### B. Metric (Metrik)
+### B. Metric
 
-- **Definisi:** **Angka hasil agregasi** dari sekumpulan event dalam kurun waktu tertentu.
-- **Fungsi:** Melihat tren dan membandingkan performa dengan masa lalu.
-- **Analogi — Grafik Penjualan:** *"Rata-rata 100 bungkus terjual per menit hari ini"* atau *"CPU naik ke 80% jam 12 siang."*
+- **Definition:** **Aggregated numbers** summarizing many events over a period of time.
+- **Purpose:** See trends and compare performance against the past.
+- **Analogy — Sales chart:** *"On average 100 bags sold per minute today"* or *"CPU climbed to 80% at noon."*
 
-### C. Log (Catatan Rinci)
+### C. Log
 
-- **Definisi:** **Rekaman teks detail** tentang sebuah event beserta konteksnya.
-- **Fungsi:** Barang bukti utama saat menyelidiki error.
-- **Analogi — Nota Super Lengkap:**
+- **Definition:** A **detailed text record** of an event together with its context.
+- **Purpose:** The main evidence when investigating errors.
+- **Analogy — A very detailed receipt:**
 
   ```text
-  Barang       : Keripik Kentang
-  Harga        : Rp10.000
-  Waktu        : 15:20:05.123 WIB
-  ID Kasir     : VEND-SURABAYA-04
-  Pembayaran   : QRIS
+  Item         : Potato Chips
+  Price        : Rp10,000
+  Time         : 15:20:05.123 WIB
+  Cashier ID   : VEND-SURABAYA-04
+  Payment      : QRIS
   Status       : Success (200)
   ```
 
-### D. Trace (Jejak Perjalanan)
+### D. Trace
 
-- **Definisi:** Rekaman **perjalanan satu request lintas layanan** dari awal sampai akhir.
-- **Fungsi:** Menunjukkan bagian mana yang membuat proses lambat atau gagal.
-- **Analogi — Lacak Resi Pesanan Online:**
+- **Definition:** A record of **one request's journey across services** from start to finish.
+- **Purpose:** Shows which part is slow or failing.
+- **Analogy — Tracking an online order:**
 
-  1. Tekan "Bayar" → **API Gateway** (10 ms)
-  2. Potong saldo → **Payment Service** (200 ms)
-  3. Cetak pesanan di dapur → **Inventory Service** (50 ms)
-  4. Kirim notifikasi → **Notification Service**
+  1. Tap "Pay" → **API Gateway** (10 ms)
+  2. Deduct balance → **Payment Service** (200 ms)
+  3. Print the order in the kitchen → **Inventory Service** (50 ms)
+  4. Send notification → **Notification Service**
 
-  Jika proses macet 5 detik, trace langsung menunjukkan titik macetnya (misal di *Payment Service*).
+  If the process stalls for 5 seconds, the trace immediately shows where (e.g. in the *Payment Service*).
 
-### Ringkasan MELT
+### MELT Summary
 
-| Tipe | Pertanyaan yang Dijawab | Analogi |
+| Type | Question answered | Analogy |
 |---|---|---|
-| Metric | Bagaimana trennya? | Grafik penjualan |
-| Event | Apa yang terjadi? | Struk belanja |
-| Log | Apa detailnya? | Nota lengkap |
-| Trace | Di mana lambat/gagalnya? | Lacak resi |
+| Metric | What is the trend? | Sales chart |
+| Event | What happened? | Purchase receipt |
+| Log | What are the details? | Detailed receipt |
+| Trace | Where is it slow/failing? | Package tracking |
